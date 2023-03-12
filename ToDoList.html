@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>To-Do App</title>
+    </head>
+    <body>
+        <input id = "todo-title" type="text">
+        <input id = "date-picker" type="date">
+        <button onclick = "addTask();">Add Task</button>
+
+        <div id = "task-list"></div>
+        <script>
+
+            //Model
+            //Check if local storage already has a task array, use it, otherewise use default array
+            let tasks;
+            //retrieve localStorage
+            const savedTasks = JSON.parse(localStorage.getItem("tasks"));
+
+            if (Array.isArray(savedTasks)){
+                tasks = savedTasks;
+                render()
+            } 
+            else {
+                tasks = [];
+            }
+
+            //Creates a task
+            function createTask(taskName, dueDate){
+                const id = ''+new Date().getTime();
+
+                tasks.push({
+                    title: taskName,
+                    dueDate: dueDate,
+                    id: id,
+                    isEditing: undefined
+                });
+
+                saveTasks();
+            }
+
+            //Deletes a task
+            function removeTask(delID){
+                tasks = tasks.filter(function(task) {
+                    return task.id != delID;
+                });
+
+                saveTasks();
+            }
+
+            function toggleTask(taskId, checkStatus){
+                tasks.forEach(function(task){
+                    if (task.id === taskId){
+                        task.isDone = checkStatus;
+                    }
+                })
+
+            }
+            //local storage saves data from webpage
+            function saveTasks() {
+                localStorage.setItem("tasks", JSON.stringify(tasks)); //because localstorage can only save strings
+            }
+            
+            function editTask(){
+                const editButton = event.target;
+                let editID = editButton.id;
+                tasks.forEach(function (task){
+                    if (task.id === editID){
+                        task.isEditing = true;
+                    }
+                })
+                render();
+            }
+
+            function updateTask(){
+                const updateButton = event.target;
+                const taskIDtoUpdate = updateButton.id;
+                const editText = document.getElementById("edit-textbox");
+                const editDate = document.getElementById("edit-datePicker");
+                const newText = editText.value;
+                const newDate = editDate.value;
+
+                tasks.forEach(function (task){
+                    if (task.id === taskIDtoUpdate){
+                        task.title = newText;
+                        task.dueDate = newDate;
+                        task.isEditing = false;
+                    }
+                })
+                render();
+                saveTasks();
+            }
+
+            //Controller 
+            function addTask(){ 
+                const textBox = document.getElementById("todo-title");
+                const taskName = textBox.value;
+
+                const datePicker = document.getElementById("date-picker");
+                const dueDate = datePicker.value;
+
+                createTask(taskName, dueDate);
+
+                render();
+            }
+
+            function onDelete(taskToDelete){
+                return function (){
+                    removeTask(taskToDelete.id);
+                    render();
+                }
+            }
+            
+
+            /*function deleteTask(){
+                const deleteButton = event.target; 
+                let delID = deleteButton.id;
+
+                removeTask(delID);
+                
+                render();
+            }*/ //old delete function
+
+            function checkTask(){
+                const checkBox = event.target;
+                let taskID = checkBox.dataset.taskId;
+                const checkStatus = checkBox.checked;
+
+                toggleTask(taskID, checkStatus);
+                render();
+            }
+
+            //View
+            function render(){ 
+                //reset earlier version of task list
+                document.getElementById("task-list").innerHTML = '';
+
+                tasks.forEach(function(task) {
+                const element = document.createElement("div");
+                element.innerText = task.title + " " + task.dueDate;
+
+                const checkBox = document.createElement("input");
+                checkBox.type = "checkbox"
+                checkBox.onchange = checkTask;
+                checkBox.dataset.taskId = task.id;
+                if (task.isDone === true){
+                    checkBox.checked = true;
+                } else{
+                    checkBox.checked = false;
+                }
+                const deleteButton = document.createElement("button");
+                deleteButton.innerText = "Delete";
+                deleteButton.style = "margin-left: 15px;"
+                deleteButton.id = task.id;
+                deleteButton.onclick = onDelete(task); 
+
+                const editButton = document.createElement("button");
+                editButton.innerText = "Edit";
+                editButton.id = task.id;
+                editButton.style = "margin-left: 15px;"
+                editButton.onclick = editTask;
+
+                const list = document.getElementById("task-list");
+                
+
+                if (task.isEditing === true){
+                    const editTextBox = document.createElement("input")
+                    editTextBox.type = "text";
+                    editTextBox.id = "edit-textbox"
+                    const editDatePicker = document.createElement("input");
+                    editDatePicker.type = "date";
+                    editDatePicker.id = "edit-datePicker";
+                    const updateButton = document.createElement("button");
+                    updateButton.innerText = "Update";
+                    updateButton.id = task.id;
+                    element.innerText = "";
+                    element.appendChild(editTextBox);
+                    element.appendChild(editDatePicker);
+                    element.appendChild(updateButton);
+                    list.appendChild(element);
+                    updateButton.onclick = updateTask;
+                } else {
+                    element.prepend(checkBox);
+                    element.appendChild(editButton);
+                    element.appendChild(deleteButton);
+                    list.appendChild(element);
+                }
+   
+                
+                });
+            }
+            
+        </script>
+    </body>
+</html>
